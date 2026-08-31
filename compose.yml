@@ -1,0 +1,80 @@
+services:
+  navidrome:
+    image: deluan/navidrome:latest
+    container_name: navidrome
+    restart: unless-stopped
+    ports:
+      - "4533:4533" # needs to be open for music clients to connect to
+    networks:
+      web_proxy:
+        aliases:
+          - "gordify-navidrome"
+      backend:
+    environment:
+      ND_BASEURL: "/nd"
+      ND_SCANSCHEDULE: 1h
+      ND_MUSICFOLDER: ${CONTAINER_MUSIC_ROOT}/${MUSIC_STORE_FOLDER}
+      ND_LOGLEVEL: info
+      ND_SESSIONTIMEOUT: 24h
+      ND_ENABLESHARING: "false"
+    volumes:
+      - /data/navidrome:/data
+      - ${HOST_MUSIC_ROOT}:${CONTAINER_MUSIC_ROOT}:ro
+
+  web:
+    container_name: gordify-web
+    build: ./app
+    command: uvicorn api:app --host 0.0.0.0 --port 8080
+    ports:
+      - "127.0.0.1:8080:8080"
+    expose:
+      - "8080"
+    networks:
+      web_proxy:
+        aliases:
+          - "gordify-web"
+    environment:
+      JOB_DB_PATH: ${CONTAINER_DB_ROOT}/${DB_FILE_NAME}
+      NAVIDROME_URL: ${NAVIDROME_URL}
+      NAVIDROME_ADMIN_USER: ${NAVIDROME_ADMIN_USER}
+      NAVIDROME_ADMIN_PASS: ${NAVIDROME_ADMIN_PASS}
+      SESSION_SECRET: ${SESSION_SECRET}
+    volumes:
+      - ${HOST_DB_ROOT}:${CONTAINER_DB_ROOT}   
+    depends_on:
+      - navidrome
+    restart: unless-stopped
+ 
+  worker:
+    build: ./app
+    command: python3 worker.py
+    networks:
+      backend:
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      JOB_DB_PATH: ${CONTAINER_DB_ROOT}/${DB_FILE_NAME}
+      NAVIDROME_URL: ${NAVIDROME_URL}
+      NAVIDROME_ADMIN_USER: ${NAVIDROME_ADMIN_USER}
+      NAVIDROME_ADMIN_PASS: ${NAVIDROME_ADMIN_PASS}
+      HOST_MUSIC_ROOT: ${HOST_MUSIC_ROOT}
+      CONTAINER_MUSIC_ROOT: ${CONTAINER_MUSIC_ROOT}
+      MUSIC_STORE_FOLDER: ${MUSIC_STORE_FOLDER}
+      MUSIC_USERLIBS_FOLDER: ${MUSIC_USERLIBS_FOLDER}
+      SPOTDL_IMAGE: spotdl/spotify-downloader:latest
+      SPOTDL_CONFIG_DIR: ${SPOTDL_CONFIG_DIR}
+      JOB_TIMEOUT_SECONDS: "2700"
+      POLL_INTERVAL_SECONDS: "3"
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ${HOST_DB_ROOT}:${CONTAINER_DB_ROOT}   
+      - ${HOST_MUSIC_ROOT}:${HOST_MUSIC_ROOT}
+      - /var/run/docker.sock:/var/run/docker.sock # for worker to spawn its own spotdl containers  
+    depends_on:
+      - navidrome
+    restart: unless-stopped
+
+networks:
+  backend:
+  web_proxy:
+    external: true

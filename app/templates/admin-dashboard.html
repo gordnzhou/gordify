@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gordify - ADMIN Dashboard</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header>
+    <h1>Hello, {{ username }} (admin)</h1>
+    <a class="change-password" href="/change-password">Change Password</a>
+    <a class="logout" href="/logout">Log out</a>
+  </header>
+
+  {% if error %}<div class="message-box error">{{ error }}</div>{% endif %}
+  {% if success %}<div class="message-box success">{{ success }}</div>{% endif %}
+
+  <div class="jobs-header">
+    <h2>All Downloads</h2>
+
+    <form method="get" action="/dashboard">
+      <label for="sort">Sort by:</label>
+      <select name="sort" id="sort" onchange="this.form.submit()">
+        <option value="date_desc" {% if current_sort == 'date_desc' %}selected{% endif %}>Date Created: New to Old</option>
+        <option value="date_asc" {% if current_sort == 'date_asc' %}selected{% endif %}>Date Created: Old to New</option>
+        <option value="duration_desc" {% if current_sort == 'duration_desc' %}selected{% endif %}>Job Duration: Long to Short</option>
+        <option value="duration_asc" {% if current_sort == 'duration_asc' %}selected{% endif %}>Job Duration: Short to Long</option>
+      </select>
+
+      <label for="filter">Filter by:</label>
+      <select name="filter" id="filter" onchange="this.form.submit()">
+        <option value="all" {% if current_filter == 'all' %}selected{% endif %}>All</option>
+        <option value="finished" {% if current_filter == 'finished' %}selected{% endif %}>Success</option>
+        <option value="failed" {% if current_filter == 'failed' %}selected{% endif %}>Failed</option>
+      </select>
+
+      <label for="limit">Limit:</label>
+      <select name="limit" id="limit" onchange="this.form.submit()">
+        <option value="{{ current_limit }}" selected>{{ current_limit }}</option>
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="20">20</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+      </select>
+
+      <label>{{ jobs|length }} jobs being displayed</label>
+    </form>
+
+    <button type="button" onclick="location.reload()">Refresh list of all jobs</button>
+  </div>
+
+  {% if jobs %}
+  <ul>
+    {% for job in jobs %}
+    <li>
+      <div class="job-row">
+        <span class="job-query" title="{{ job.query }}">({{ job.username }}) {{ job.query }}</span>
+        <span class="job-status {{ job.status }}">{{ job.status }}</span>
+      </div>
+      <time>submitted {{ job.created_at }}</time>
+      {% if job.status == 'failed' and job.error %}
+      <div class="job-error">{{ job.error }}</div>
+      {% endif %}
+      {% if job.logs %}
+      <details>
+        <summary>{{ "Error details" if job.status == "failed" else "Output log" }}</summary>
+        <pre>{{ job.logs }}</pre>
+      </details>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>No jobs yet.</p>
+  {% endif %}
+
+</body>
+</html>

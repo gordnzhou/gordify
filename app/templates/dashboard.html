@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gordify - Dashboard</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="/static/script.js" defer></script> 
+</head>
+<body>
+  <header>
+    <a class="nav-link" href="/nd">Web Music Client</a>
+    <a class="nav-link" href="/change-password">Change Password</a>
+    <a class="nav-link" href="/logout">Log out</a>
+    
+    <div class="help-widget">
+      <button class="help-icon" id="help-toggle" aria-expanded="false" aria-controls="help-panel" title="Help">?</button>
+      <div class="help-panel" id="help-panel" role="dialog" aria-label="Help">
+        <button class="help-close" id="help-close" aria-label="Close">&times;</button>
+        <p>
+          1. Enter your URL or query, then click 'Add to my library'. Note that Playlists URLs must be public. A download job will be started, which you can view the status of.
+          <br><br>
+          2. A job typically less than a minute for single song requests, but can take over twenty minutes for playlists with 100+ songs.
+          <br><br>
+          3. Wait for your job's status to be 'finished'. You can see your new tracks by logging in on any music client (Symfonium, Arpeggi, etc..) with the same credentials, 
+          then ensure your music client is synced (sync should be automatic if on the VPN).
+          <br><br>
+          4. If any songs failed to download, run the same query again at a later time to retry. Note that some songs will fail no matter how many times you retry. 
+        </p>
+      </div>
+    </div>
+  </header>
+
+  <h1>Your Dashboard</h1>
+  <h2>Hello, {{ username }}</h2>
+
+  {% if error %}<div class="message-box error">{{ error }}</div>{% endif %}
+  {% if success %}<div class="message-box success">{{ success }}</div>{% endif %}
+
+  <form method="post" action="/dashboard/submit">
+    <input type="text" name="query" placeholder="Spotify URL, Youtube URL, or search for a song: 'artist - name'..." required>
+    <button type="submit">Add to my library</button>
+  </form>
+
+  <div class="jobs-header">
+    <h2>Your Downloads</h2>
+
+    <form method="get" action="/dashboard">
+      <label for="sort">Sort by:</label>
+      <select name="sort" id="sort" onchange="this.form.submit()">
+        <option value="date_desc" {% if current_sort == 'date_desc' %}selected{% endif %}>Date Created: New to Old</option>
+        <option value="date_asc" {% if current_sort == 'date_asc' %}selected{% endif %}>Date Created: Old to New</option>
+        <option value="duration_desc" {% if current_sort == 'duration_desc' %}selected{% endif %}>Job Duration: Long to Short</option>
+        <option value="duration_asc" {% if current_sort == 'duration_asc' %}selected{% endif %}>Job Duration: Short to Long</option>
+      </select>
+
+      <label for="filter">Filter by:</label>
+      <select name="filter" id="filter" onchange="this.form.submit()">
+        <option value="all" {% if current_filter == 'all' %}selected{% endif %}>All</option>
+        <option value="finished" {% if current_filter == 'finished' %}selected{% endif %}>Success</option>
+        <option value="failed" {% if current_filter == 'failed' %}selected{% endif %}>Failed</option>
+      </select>
+
+      <label for="limit">Limit:</label>
+      <select name="limit" id="limit" onchange="this.form.submit()">
+        <option value="{{ current_limit }}" selected>{{ current_limit }}</option>
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="20">20</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+      </select>
+
+      <label>{{ jobs|length }} jobs being displayed</label>
+    </form>
+
+    <button type="button" onclick="location.reload()">Refresh now</button>
+  </div>
+
+  {% if jobs %}
+  <ul>
+    {% for job in jobs %}
+    <li>
+      <div class="job-row">
+        <span class="job-query" title="{{ job.query }}">{{ job.query }}</span>
+        <span class="job-status {{ job.status }}">{{ job.status }}</span>
+      </div>
+      <time>submitted {{ job.created_at }}</time>
+      {% if job.status == 'failed' and job.error %}
+      <div class="job-error">{{ job.error }}</div>
+      {% endif %}
+      {% if job.logs %}
+      <details>
+        <summary>{{ "Error details" if job.status == "failed" else "Output log" }}</summary>
+        <pre>{{ job.logs }}</pre>
+      </details>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>No jobs yet.</p>
+  {% endif %}
+</body>
+</html>

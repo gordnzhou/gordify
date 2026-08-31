@@ -1,0 +1,20 @@
+{
+  "client_id": "<YOUR_SPOTIFY_CLIENT_ID>",
+  "client_secret": "<YOUR_SPOTIFY_CLIENT_SECRET",
+  "user_auth": false,
+  "auth_token": null,
+  "no_cache": false,
+  "cache_path": "/music/.spotdl/.spotipy",
+  "threads": 8,
+  "simple_tui": true,
+  "max_retries": 3,
+  "audio_providers": [
+    "youtube-music",
+    "youtube"
+  ],
+  "lyrics_providers": [ ],
+  "output": "{artists} - {title}.{output-ext}",
+  "bitrate": "320k",
+  "add_unavaliable": false,
+  "save_errors": "/music/.spotdl/errors.txt"
+}

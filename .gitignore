@@ -1,0 +1,8 @@
+.env
+__pycache__/
+.pytest_cache/
+
+old/
+tests/random
+spotdl/*
+!spotdl/config.json.example

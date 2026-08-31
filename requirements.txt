@@ -1,0 +1,5 @@
+python-dotenv==1.0.1
+pytest==9.0.2
+mutagen==1.47.0
+httpx==0.28.1
+urllib3==2.6.3
